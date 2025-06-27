@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Задача о трёх черепахах</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        h1, h2 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        .canvas-container {
+            position: relative;
+            margin: 20px auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            background-color: white;
+        }
+        canvas {
+            display: block;
+            background-color: white;
+        }
+        .info-panel {
+            background-color: #e8f4fc;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+        .control-group {
+            margin: 0 10px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .instructions {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border-left: 4px solid #3498db;
+        }
+        .highlight {
+            background-color: #fffacd;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        .formula {
+            font-family: monospace;
+            font-size: 16px;
+            background-color: #f0f0f0;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: inline-block;
+            margin: 3px 0;
+        }
+        .law {
+            background-color: white;
+            border-left: 3px solid #3498db;
+            padding: 8px 12px;
+            margin: 8px 0;
+            border-radius: 0 4px 4px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Три черепахи в вершинах равностороннего треугольника</h1>
+    
+    <div class="canvas-container">
+        <canvas id="turtleCanvas" width="800" height="600"></canvas>
+    </div>
+
+    <div class="controls">
+        <div class="control-group">
+            <label for="length">Длина стороны (l):</label>
+            <input type="range" id="length" min="10" max="50" value="30" step="1">
+            <span id="length-value">20</span>
+        </div>
+        <div class="control-group">
+            <label for="speed">Скорость (v):</label>
+            <input type="range" id="speed" min="1" max="10" value="3" step="0.5">
+            <span id="speed-value">3.0</span>
+        </div>
+        <div class="control-group">
+            <button id="animateBtn">Запустить анимацию</button>
+            <button id="resetBtn">Сбросить</button>
+        </div>
+    </div>
+    
+    <div class="instructions">
+        <h3>Инструкция:</h3>
+        <ul>
+            <li>Измените параметры <span class="highlight">l</span> и <span class="highlight">v</span> с помощью ползунков</li>
+            <li>Нажмите "Запустить анимацию" для визуализации движения</li>
+            <li>Черепахи движутся по логарифмическим спиралям к центру</li>
+            <li>Время встречи: <span class="formula">t = 2l/(3v)</span></li>
+            <li>Пройденный путь: <span class="formula">S = 2l/3</span></li>
+        </ul>
+    </div>
+    
+    <div class="info-panel">
+        <h2>Физические законы и решение</h2>
+        
+        <div class="law">
+            <strong>Кинематика движения:</strong>
+            <p>Каждая черепаха движется с постоянной скоростью <span class="formula">v</span> по направлению к соседней черепахе.</p>
+            <p>Вектор скорости можно разложить на две компоненты:</p>
+            <ul>
+                <li>Радиальная компонента: <span class="formula">v_r = v cos(30°) = v√3/2</span></li>
+                <li>Тангенциальная компонента: <span class="formula">v_θ = v sin(30°) = v/2</span></li>
+            </ul>
+        </div>
+        
+        <div class="law">
+            <strong>Геометрия задачи:</strong>
+            <p>Для равностороннего треугольника со стороной <span class="formula">l</span>:</p>
+            <ul>
+                <li>Расстояние от вершины до центра: <span class="formula">r_0 = l/√3</span></li>
+                <li>Угол между направлением на центр и направлением движения: <span class="formula">30°</span></li>
+            </ul>
+        </div>
+        
+        <div class="law">
+            <strong>Радиус кривизны траектории:</strong>
+            <p>В начальный момент времени радиус кривизны:</p>
+            <p><span class="formula">R = (v^2)/a_n = (2√3/3)l ≈ 1.1547l</span></p>
+            <p>где <span class="formula">a_n</span> — нормальное ускорение.</p>
+        </div>
+        
+        <div class="law">
+            <strong>Ход решения:</strong>
+            <ol>
+                <li>Скорость сближения с центром: <span class="formula">v_{сбл} = v cos(30°) = v√3/2</span></li>
+                <li>Время до встречи: <span class="formula">t = r_0/v_{сбл} = (l/√3)/(v√3/2) = 2l/(3v)</span></li>
+                <li>Пройденный путь: <span class="formula">S = v·t = 2l/3</span></li>
+                <li>Траектория — логарифмическая спираль с параметром <span class="formula">k = 1/√3</span></li>
+            </ol>
+        </div>
+        
+        <div class="law">
+            <strong>Ответ:</strong>
+            <p>Черепахи встретятся в центре треугольника через время <span class="formula">t = 2l/(3v)</span>, пройдя путь <span class="formula">S = 2l/3</span>.</p>
+            <p>Радиус кривизны траектории в начальный момент: <span class="formula">R = (2√3/3)l</span>.</p>
+        </div>
+    </div>
+
+    <script>
+        // Основные константы и переменные
+        const canvas = document.getElementById('turtleCanvas');
+        const ctx = canvas.getContext('2d');
+        const lengthInput = document.getElementById('length');
+        const speedInput = document.getElementById('speed');
+        const lengthValue = document.getElementById('length-value');
+        const speedValue = document.getElementById('speed-value');
+        const animateBtn = document.getElementById('animateBtn');
+        const resetBtn = document.getElementById('resetBtn');
+
+        // Параметры задачи
+        let l = parseInt(lengthInput.value);  // Длина стороны треугольника
+        let v = parseFloat(speedInput.value); // Скорость черепах
+        let scale = 10;                       // Масштаб (пикселей на метр)
+        
+        // Состояние анимации
+        let isAnimating = false;
+        let animationId = null;
+        let startTime = null;
+        let elapsedTime = 0;
+        
+        // Позиции черепах (в пикселях)
+        let turtles = [];
+        let center = { x: canvas.width / 2, y: canvas.height / 2 };
+        
+        // Цвета для визуализации
+        const colors = {
+            turtle1: '#e74c3c',
+            turtle2: '#3498db',
+            turtle3: '#2ecc71',
+            triangle: '#2c3e50',
+            center: '#9b59b6',
+            trajectory1: 'rgba(231, 76, 60, 0.5)',
+            trajectory2: 'rgba(52, 152, 219, 0.5)',
+            trajectory3: 'rgba(46, 204, 113, 0.5)'
+        };
+        
+        // Траектории движения (для отрисовки)
+        let trajectories = [[], [], []];
+        
+        // Инициализация позиций черепах
+        function initTurtles() {
+            const angleStep = (2 * Math.PI) / 3;
+            turtles = [];
+            
+            for (let i = 0; i < 3; i++) {
+                const angle = i * angleStep - Math.PI / 2; // Смещение для первой черепахи сверху
+                turtles.push({
+                    x: center.x + l * scale * Math.cos(angle),
+                    y: center.y + l * scale * Math.sin(angle),
+                    angle: angle + Math.PI / 6 // Направление движения (к следующей черепахе)
+                });
+            }
+            
+            // Очищаем траектории
+            trajectories = [[], [], []];
+            for (let i = 0; i < 3; i++) {
+                trajectories[i].push({ x: turtles[i].x, y: turtles[i].y });
+            }
+        }
+        
+        // Отрисовка сцены
+        function drawScene() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Рисуем траектории
+            drawTrajectories();
+            
+            // Рисуем треугольник
+            drawTriangle();
+            
+            // Рисуем центр
+            drawCenter();
+            
+            // Рисуем черепах
+            drawTurtles();
+        }
+        
+        // Отрисовка треугольника
+        function drawTriangle() {
+            ctx.beginPath();
+            ctx.moveTo(turtles[0].x, turtles[0].y);
+            ctx.lineTo(turtles[1].x, turtles[1].y);
+            ctx.lineTo(turtles[2].x, turtles[2].y);
+            ctx.closePath();
+            ctx.strokeStyle = colors.triangle;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+        
+        // Отрисовка центра
+        function drawCenter() {
+            ctx.beginPath();
+            ctx.arc(center.x, center.y, 6, 0, Math.PI * 2);
+            ctx.fillStyle = colors.center;
+            ctx.fill();
+            ctx.strokeStyle = '#2c3e50';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            
+            // Подпись
+            ctx.fillStyle = '#2c3e50';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Центр', center.x, center.y - 15);
+        }
+        
+        // Отрисовка черепах
+        function drawTurtles() {
+            for (let i = 0; i < 3; i++) {
+                const turtle = turtles[i];
+                
+                // Тело черепахи
+                ctx.beginPath();
+                ctx.arc(turtle.x, turtle.y, 10, 0, Math.PI * 2);
+                ctx.fillStyle = colors[`turtle${i+1}`];
+                ctx.fill();
+                ctx.strokeStyle = '#2c3e50';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                // Направление движения (стрелка)
+                const arrowLength = 15;
+                ctx.beginPath();
+                ctx.moveTo(turtle.x, turtle.y);
+                ctx.lineTo(
+                    turtle.x + arrowLength * Math.cos(turtle.angle),
+                    turtle.y + arrowLength * Math.sin(turtle.angle)
+                );
+                ctx.strokeStyle = '#2c3e50';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                // Подпись
+                ctx.fillStyle = '#2c3e50';
+                ctx.font = 'bold 14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(`Ч${i+1}`, turtle.x, turtle.y - 15);
+            }
+        }
+        
+        // Отрисовка траекторий
+        function drawTrajectories() {
+            for (let i = 0; i < 3; i++) {
+                if (trajectories[i].length < 2) continue;
+                
+                ctx.beginPath();
+                ctx.moveTo(trajectories[i][0].x, trajectories[i][0].y);
+                
+                for (let j = 1; j < trajectories[i].length; j++) {
+                    ctx.lineTo(trajectories[i][j].x, trajectories[i][j].y);
+                }
+                
+                ctx.strokeStyle = colors[`trajectory${i+1}`];
+                ctx.lineWidth = 3;
+                ctx.stroke();
+            }
+        }
+        
+        // Обновление позиций черепах при анимации
+        function updateTurtles(dt) {
+            // Время до встречи
+            const tMeet = (2 * l) / (3 * v);
+            
+            // Если время превышено, ставим всех в центр
+            if (elapsedTime >= tMeet) {
+                for (let i = 0; i < 3; i++) {
+                    turtles[i].x = center.x;
+                    turtles[i].y = center.y;
+                }
+                return false; // Анимация завершена
+            }
+            
+            // Обновляем позиции по логарифмической спирали
+            const r0 = (l * scale) / Math.sqrt(3); // Начальное расстояние до центра
+            const omega = (v * Math.sqrt(3)) / (2 * l); // Угловая скорость
+            
+            for (let i = 0; i < 3; i++) {
+                const initialAngle = (i * (2 * Math.PI / 3)) - Math.PI / 2;
+                const r = r0 * (1 - elapsedTime / tMeet); // Линейное уменьшение радиуса
+                const angle = initialAngle + omega * elapsedTime;
+                
+                turtles[i].x = center.x + r * Math.cos(angle);
+                turtles[i].y = center.y + r * Math.sin(angle);
+                turtles[i].angle = angle + Math.PI / 6; // Направление движения
+                
+                // Добавляем точку в траекторию (не слишком часто)
+                if (trajectories[i].length === 0 || 
+                    distance(trajectories[i][trajectories[i].length - 1], turtles[i]) > 5) {
+                    trajectories[i].push({ x: turtles[i].x, y: turtles[i].y });
+                }
+            }
+            
+            return true; // Анимация продолжается
+        }
+        
+        // Расстояние между двумя точками
+        function distance(p1, p2) {
+            return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+        }
+        
+        // Обработчик изменения длины стороны
+        lengthInput.addEventListener('input', function() {
+            l = parseInt(this.value);
+            lengthValue.textContent = l;
+            resetAnimation();
+        });
+        
+        // Обработчик изменения скорости
+        speedInput.addEventListener('input', function() {
+            v = parseFloat(this.value);
+            speedValue.textContent = v.toFixed(1);
+            resetAnimation();
+        });
+        
+        // Кнопка запуска/остановки анимации
+        animateBtn.addEventListener('click', function() {
+            if (isAnimating) {
+                stopAnimation();
+            } else {
+                startAnimation();
+            }
+        });
+        
+        // Кнопка сброса
+        resetBtn.addEventListener('click', resetAnimation);
+        
+        // Запуск анимации
+        function startAnimation() {
+            if (isAnimating) return;
+            
+            isAnimating = true;
+            animateBtn.textContent = 'Остановить';
+            startTime = Date.now() - elapsedTime * 1000;
+            
+            // Функция анимации
+            function animate() {
+                const currentTime = Date.now();
+                elapsedTime = (currentTime - startTime) / 1000; // В секундах
+                
+                const continueAnimation = updateTurtles(elapsedTime);
+                drawScene();
+                
+                if (continueAnimation) {
+                    animationId = requestAnimationFrame(animate);
+                } else {
+                    stopAnimation();
+                }
+            }
+            
+            animationId = requestAnimationFrame(animate);
+        }
+        
+        // Остановка анимации
+        function stopAnimation() {
+            if (!isAnimating) return;
+            
+            isAnimating = false;
+            animateBtn.textContent = 'Запустить анимацию';
+            
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+        }
+        
+        // Сброс анимации и позиций
+        function resetAnimation() {
+            stopAnimation();
+            elapsedTime = 0;
+            initTurtles();
+            drawScene();
+        }
+        
+        // Инициализация при загрузке
+        window.addEventListener('load', function() {
+            initTurtles();
+            drawScene();
+        });
+    </script>
+</body>
+</html>
