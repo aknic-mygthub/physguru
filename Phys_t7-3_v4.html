@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Движение точек по окружностям с управлением</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        h1, h2 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        .canvas-container {
+            position: relative;
+            margin: 20px auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            background-color: white;
+        }
+        canvas {
+            display: block;
+            background-color: white;
+        }
+        .info-panel {
+            background-color: #e8f4fc;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+        .control-group {
+            margin: 0 10px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .instructions {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border-left: 4px solid #3498db;
+        }
+        .highlight {
+            background-color: #fffacd;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        .formula {
+            font-family: monospace;
+            font-size: 16px;
+            background-color: #f0f0f0;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: inline-block;
+            margin: 3px 0;
+        }
+        .law {
+            background-color: white;
+            border-left: 3px solid #3498db;
+            padding: 8px 12px;
+            margin: 8px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        .result {
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #e8f8f5;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Движение точек по окружностям с интерактивным управлением</h1>
+    
+    <div class="canvas-container">
+        <canvas id="motionCanvas" width="800" height="600"></canvas>
+    </div>
+
+    <div class="controls">
+        <div class="control-group">
+            <label for="speed">Скорость точек (v):</label>
+            <input type="range" id="speed" min="0.1" max="2" value="0.5" step="0.1">
+            <span id="speed-value">0.5</span>
+        </div>
+        <div class="control-group">
+            <label for="time">Время (t):</label>
+            <input type="range" id="time" min="0" max="120" value="60" step="1">
+            <span id="time-value">60</span>
+        </div>
+        <div class="control-group">
+            <button id="animateBtn">Запустить анимацию</button>
+            <button id="resetBtn">Сбросить</button>
+        </div>
+    </div>
+    
+    <div class="result" id="result">
+        Угол между ускорениями: <span id="angle-value">0.00</span> рад<br>
+        Радиусы: <span id="radius1-value">5.00</span> м и <span id="radius2-value">10.00</span> м
+    </div>
+    
+    <div class="instructions">
+        <h3>Инструкция:</h3>
+        <ul>
+            <li><span class="highlight">Перетащите точки</span> мышкой для изменения их положения</li>
+            <li><span class="highlight">Перетащите окружности</span> для изменения их радиусов</li>
+            <li>Измените параметры <span class="highlight">v</span> и <span class="highlight">t</span> с помощью ползунков</li>
+            <li>Нажмите "Запустить анимацию" для визуализации движения</li>
+            <li>Угол между ускорениями вычисляется по формуле: <span class="formula">ϕ = vt(R − r)/Rr</span></li>
+        </ul>
+    </div>
+    
+    <div class="info-panel">
+        <h2>Физические законы и решение</h2>
+        
+        <div class="law">
+            <strong>Кинематика движения по окружности:</strong>
+            <p>При движении по окружности с постоянной скоростью <span class="formula">v</span> и радиусом <span class="formula">r</span>:</p>
+            <ul>
+                <li>Угловая скорость: <span class="formula">ω = v/r</span></li>
+                <li>Центростремительное ускорение: <span class="formula">a = v²/r</span></li>
+                <li>Пройденный путь: <span class="formula">s = vt</span></li>
+                <li>Угол поворота: <span class="formula">θ = ωt = vt/r</span></li>
+            </ul>
+        </div>
+        
+        <div class="law">
+            <strong>Направления ускорений:</strong>
+            <p>Ускорение всегда направлено к центру окружности.</p>
+            <p>Для двух точек на окружностях с радиусами <span class="formula">r</span> и <span class="formula">R</span>:</p>
+            <ul>
+                <li>Углы поворота: <span class="formula">θ₁ = vt/r</span>, <span class="formula">θ₂ = vt/R</span></li>
+                <li>Разность углов: <span class="formula">Δθ = θ₁ - θ₂ = vt(1/r - 1/R) = vt(R - r)/Rr</span></li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Основные константы и переменные
+        const canvas = document.getElementById('motionCanvas');
+        const ctx = canvas.getContext('2d');
+        const speedInput = document.getElementById('speed');
+        const timeInput = document.getElementById('time');
+        const speedValue = document.getElementById('speed-value');
+        const timeValue = document.getElementById('time-value');
+        const angleValue = document.getElementById('angle-value');
+        const radius1Value = document.getElementById('radius1-value');
+        const radius2Value = document.getElementById('radius2-value');
+        const animateBtn = document.getElementById('animateBtn');
+        const resetBtn = document.getElementById('resetBtn');
+
+        // Параметры задачи
+        let v = parseFloat(speedInput.value);   // Скорость точек
+        let t = parseInt(timeInput.value);    // Время движения
+        let scale = 30;                       // Масштаб (пикселей на метр)
+        
+        // Состояние анимации
+        let isAnimating = false;
+        let animationId = null;
+        let animationTime = 0;
+        
+        // Центр окружностей
+        let center = { 
+            x: canvas.width / 2, 
+            y: canvas.height / 2 
+        };
+        
+        // Радиусы окружностей (в метрах)
+        let r = 5;
+        let R = 10;
+        
+        // Позиции точек (в пикселях)
+        let point1 = { x: 0, y: 0, angle: 0, acceleration: 0 };
+        let point2 = { x: 0, y: 0, angle: 0, acceleration: 0 };
+        
+        // Состояние перетаскивания
+        let isDragging = false;
+        let dragType = null; // 'point1', 'point2', 'circle1', 'circle2'
+        let startDragPos = { x: 0, y: 0 };
+        
+        // Цвета для визуализации
+        const colors = {
+            circle1: 'rgba(231, 76, 60, 0.2)',
+            circle2: 'rgba(52, 152, 219, 0.2)',
+            point1: '#e74c3c',
+            point2: '#3498db',
+            acceleration1: '#c0392b',
+            acceleration2: '#2980b9',
+            line: '#95a5a6'
+        };
+        
+        // Инициализация позиций точек
+        function initPoints() {
+            // Вычисляем углы поворота
+            const angle1 = v * t / r;
+            const angle2 = v * t / R;
+            
+            // Устанавливаем позиции точек
+            point1 = {
+                x: center.x + r * scale * Math.cos(angle1),
+                y: center.y + r * scale * Math.sin(angle1),
+                angle: angle1,
+                acceleration: v * v / r
+            };
+            
+            point2 = {
+                x: center.x + R * scale * Math.cos(angle2),
+                y: center.y + R * scale * Math.sin(angle2),
+                angle: angle2,
+                acceleration: v * v / R
+            };
+            
+            // Вычисляем угол между ускорениями
+            const angleBetween = Math.abs(angle1 - angle2);
+            angleValue.textContent = angleBetween.toFixed(2);
+            radius1Value.textContent = r.toFixed(2);
+            radius2Value.textContent = R.toFixed(2);
+        }
+        
+        // Отрисовка сцены
+        function drawScene() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Рисуем окружности
+            drawCircles();
+            
+            // Рисуем точки
+            drawPoints();
+            
+            // Рисуем ускорения
+            drawAccelerations();
+            
+            // Рисуем линию, соединяющую точки (для наглядности)
+            drawConnectingLine();
+        }
+        
+        // Отрисовка окружностей
+        function drawCircles() {
+            // Первая окружность (r)
+            ctx.beginPath();
+            ctx.arc(center.x, center.y, r * scale, 0, Math.PI * 2);
+            ctx.strokeStyle = colors.circle1;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Вторая окружность (R)
+            ctx.beginPath();
+            ctx.arc(center.x, center.y, R * scale, 0, Math.PI * 2);
+            ctx.strokeStyle = colors.circle2;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Подписи окружностей
+            ctx.fillStyle = colors.circle1;
+            ctx.font = '14px Arial';
+            ctx.fillText(`r = ${r.toFixed(2)} м`, center.x + r * scale + 10, center.y);
+            
+            ctx.fillStyle = colors.circle2;
+            ctx.fillText(`R = ${R.toFixed(2)} м`, center.x + R * scale + 10, center.y);
+        }
+        
+        // Отрисовка точек
+        function drawPoints() {
+            // Первая точка (r)
+            ctx.beginPath();
+            ctx.arc(point1.x, point1.y, 10, 0, Math.PI * 2);
+            ctx.fillStyle = colors.point1;
+            ctx.fill();
+            ctx.strokeStyle = '#2c3e50';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            
+            // Вторая точка (R)
+            ctx.beginPath();
+            ctx.arc(point2.x, point2.y, 10, 0, Math.PI * 2);
+            ctx.fillStyle = colors.point2;
+            ctx.fill();
+            ctx.strokeStyle = '#2c3e50';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            
+            // Подписи точек
+            ctx.fillStyle = colors.point1;
+            ctx.font = 'bold 14px Arial';
+            ctx.fillText('Точка 1', point1.x + 15, point1.y - 10);
+            
+            ctx.fillStyle = colors.point2;
+            ctx.fillText('Точка 2', point2.x + 15, point2.y - 10);
+        }
+        
+        // Отрисовка векторов ускорений
+        function drawAccelerations() {
+            const accelLength = 50; // Длина вектора ускорения (в пикселях)
+            
+            // Первое ускорение (к центру)
+            ctx.beginPath();
+            ctx.moveTo(point1.x, point1.y);
+            ctx.lineTo(
+                point1.x + (center.x - point1.x) / (r * scale) * accelLength,
+                point1.y + (center.y - point1.y) / (r * scale) * accelLength
+            );
+            ctx.strokeStyle = colors.acceleration1;
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            
+            // Второе ускорение (к центру)
+            ctx.beginPath();
+            ctx.moveTo(point2.x, point2.y);
+            ctx.lineTo(
+                point2.x + (center.x - point2.x) / (R * scale) * accelLength,
+                point2.y + (center.y - point2.y) / (R * scale) * accelLength
+            );
+            ctx.strokeStyle = colors.acceleration2;
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            
+            // Подписи ускорений
+            ctx.fillStyle = colors.acceleration1;
+            ctx.font = '12px Arial';
+            ctx.fillText(`a₁ = ${(v*v/r).toFixed(2)} м/с²`, 
+                point1.x + (center.x - point1.x) / (r * scale) * accelLength / 2,
+                point1.y + (center.y - point1.y) / (r * scale) * accelLength / 2 - 5);
+            
+            ctx.fillStyle = colors.acceleration2;
+            ctx.fillText(`a₂ = ${(v*v/R).toFixed(2)} м/с²`, 
+                point2.x + (center.x - point2.x) / (R * scale) * accelLength / 2,
+                point2.y + (center.y - point2.y) / (R * scale) * accelLength / 2 - 5);
+        }
+        
+        // Отрисовка линии, соединяющей точки
+        function drawConnectingLine() {
+            ctx.beginPath();
+            ctx.moveTo(point1.x, point1.y);
+            ctx.lineTo(point2.x, point2.y);
+            ctx.strokeStyle = colors.line;
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 3]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+        
+        // Проверка попадания в точку
+        function isPointInCircle(x, y, circleX, circleY, radius) {
+            return Math.sqrt((x - circleX) ** 2 + (y - circleY) ** 2) <= radius;
+        }
+        
+        // Обработчик нажатия мыши
+        function handleMouseDown(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            // Проверяем, попадает ли курсор в точку 1
+            if (isPointInCircle(x, y, point1.x, point1.y, 12)) {
+                dragType = 'point1';
+                startDragPos = { x: point1.x, y: point1.y };
+                return;
+            }
+            
+            // Проверяем, попадает ли курсор в точку 2
+            if (isPointInCircle(x, y, point2.x, point2.y, 12)) {
+                dragType = 'point2';
+                startDragPos = { x: point2.x, y: point2.y };
+                return;
+            }
+            
+            // Проверяем, попадает ли курсор на окружность 1 (с небольшим допуском)
+            const distToCircle1 = Math.sqrt((x - center.x) ** 2 + (y - center.y) ** 2);
+            if (Math.abs(distToCircle1 - r * scale) < 10) {
+                dragType = 'circle1';
+                startDragPos = { x, y };
+                return;
+            }
+            
+            // Проверяем, попадает ли курсор на окружность 2 (с небольшим допуском)
+            if (Math.abs(distToCircle1 - R * scale) < 10) {
+                dragType = 'circle2';
+                startDragPos = { x, y };
+                return;
+            }
+        }
+        
+        // Обработчик движения мыши
+        function handleMouseMove(e) {
+            if (!dragType) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            if (dragType === 'point1') {
+                // Перемещаем точку 1
+                const angle = Math.atan2(y - center.y, x - center.x);
+                point1.x = center.x + r * scale * Math.cos(angle);
+                point1.y = center.y + r * scale * Math.sin(angle);
+                point1.angle = angle;
+            }
+            else if (dragType === 'point2') {
+                // Перемещаем точку 2
+                const angle = Math.atan2(y - center.y, x - center.x);
+                point2.x = center.x + R * scale * Math.cos(angle);
+                point2.y = center.y + R * scale * Math.sin(angle);
+                point2.angle = angle;
+            }
+            else if (dragType === 'circle1') {
+                // Изменяем радиус первой окружности
+                const newRadius = Math.sqrt((x - center.x) ** 2 + (y - center.y) ** 2) / scale;
+                if (newRadius > 0.5 && newRadius < R - 0.5) {
+                    r = newRadius;
+                    // Обновляем положение точки 1
+                    const angle = Math.atan2(point1.y - center.y, point1.x - center.x);
+                    point1.x = center.x + r * scale * Math.cos(angle);
+                    point1.y = center.y + r * scale * Math.sin(angle);
+                }
+            }
+            else if (dragType === 'circle2') {
+                // Изменяем радиус второй окружности
+                const newRadius = Math.sqrt((x - center.x) ** 2 + (y - center.y) ** 2) / scale;
+                if (newRadius > r + 0.5) {
+                    R = newRadius;
+                    // Обновляем положение точки 2
+                    const angle = Math.atan2(point2.y - center.y, point2.x - center.x);
+                    point2.x = center.x + R * scale * Math.cos(angle);
+                    point2.y = center.y + R * scale * Math.sin(angle);
+                }
+            }
+            
+            // Пересчитываем угол между ускорениями
+            const angleBetween = Math.abs(point1.angle - point2.angle);
+            angleValue.textContent = angleBetween.toFixed(2);
+            radius1Value.textContent = r.toFixed(2);
+            radius2Value.textContent = R.toFixed(2);
+            
+            drawScene();
+        }
+        
+        // Обработчик отпускания мыши
+        function handleMouseUp() {
+            dragType = null;
+        }
+        
+        // Запуск анимации
+        function startAnimation() {
+            if (isAnimating) return;
+            
+            isAnimating = true;
+            animateBtn.textContent = 'Остановить';
+            animationTime = 0;
+            
+            // Сохраняем начальные углы
+            const startAngle1 = point1.angle;
+            const startAngle2 = point2.angle;
+            
+            // Функция анимации
+            function animate() {
+                animationTime += 0.1;
+                if (animationTime > t) {
+                    stopAnimation();
+                    return;
+                }
+                
+                // Вычисляем текущие углы
+                const angle1 = startAngle1 + v * animationTime / r;
+                const angle2 = startAngle2 + v * animationTime / R;
+                
+                // Обновляем позиции точек
+                point1.x = center.x + r * scale * Math.cos(angle1);
+                point1.y = center.y + r * scale * Math.sin(angle1);
+                point1.angle = angle1;
+                
+                point2.x = center.x + R * scale * Math.cos(angle2);
+                point2.y = center.y + R * scale * Math.sin(angle2);
+                point2.angle = angle2;
+                
+                // Вычисляем угол между ускорениями
+                const angleBetween = Math.abs(angle1 - angle2);
+                angleValue.textContent = angleBetween.toFixed(2);
+                
+                drawScene();
+                animationId = requestAnimationFrame(animate);
+            }
+            
+            animate();
+        }
+        
+        // Остановка анимации
+        function stopAnimation() {
+            if (!isAnimating) return;
+            
+            isAnimating = false;
+            animateBtn.textContent = 'Запустить анимацию';
+            
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+            
+            drawScene();
+        }
+        
+        // Обновление параметров задачи
+        function updateParameters() {
+            v = parseFloat(speedInput.value);
+            t = parseInt(timeInput.value);
+            
+            // Обновляем отображаемые значения
+            speedValue.textContent = v.toFixed(1);
+            timeValue.textContent = t;
+            
+            // Пересчитываем угол между ускорениями
+            const angleBetween = Math.abs(point1.angle - point2.angle);
+            angleValue.textContent = angleBetween.toFixed(2);
+        }
+        
+        // Сброс к начальным параметрам
+        function resetParameters() {
+            speedInput.value = 0.5;
+            timeInput.value = 60;
+            r = 5;
+            R = 10;
+            updateParameters();
+            initPoints();
+            drawScene();
+        }
+        
+        // Настройка обработчиков событий
+        function setupEventListeners() {
+            canvas.addEventListener('mousedown', handleMouseDown);
+            canvas.addEventListener('mousemove', handleMouseMove);
+            canvas.addEventListener('mouseup', handleMouseUp);
+            canvas.addEventListener('mouseleave', handleMouseUp);
+            
+            speedInput.addEventListener('input', function() {
+                updateParameters();
+                if (!isAnimating) drawScene();
+            });
+            
+            timeInput.addEventListener('input', function() {
+                updateParameters();
+                if (!isAnimating) drawScene();
+            });
+            
+            animateBtn.addEventListener('click', function() {
+                if (isAnimating) {
+                    stopAnimation();
+                } else {
+                    startAnimation();
+                }
+            });
+            
+            resetBtn.addEventListener('click', resetParameters);
+        }
+        
+        // Инициализация при загрузке
+        window.addEventListener('load', function() {
+            initPoints();
+            drawScene();
+            setupEventListeners();
+        });
+    </script>
+</body>
+</html>
