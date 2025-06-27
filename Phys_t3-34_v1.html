@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Построение отражения в плоском зеркале</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        h1, h2 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        .canvas-container {
+            position: relative;
+            margin: 20px auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            background-color: white;
+        }
+        canvas {
+            display: block;
+            background-color: white;
+        }
+        .info-panel {
+            background-color: #e8f4fc;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 15px 0;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .instructions {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border-left: 4px solid #3498db;
+        }
+        .highlight {
+            background-color: #fffacd;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        .formula {
+            font-family: monospace;
+            font-size: 16px;
+            background-color: #f0f0f0;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: inline-block;
+            margin: 3px 0;
+        }
+        .law {
+            background-color: white;
+            border-left: 3px solid #3498db;
+            padding: 8px 12px;
+            margin: 8px 0;
+            border-radius: 0 4px 4px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Известно, что луч, выпущенный из точки A, после отражения от плоского зеркала в точке C проходит через точку B. Нужно определить положение точки C с помощью построения.</h1>
+    
+    <div class="canvas-container">
+        <canvas id="mirrorCanvas" width="800" height="500"></canvas>
+    </div>
+    
+    <div class="controls">
+        <button id="clearBtn">Очистить холст</button>
+        <button id="animateBtn">Запустить анимацию</button>
+    </div>
+    
+    <div class="instructions">
+        <h3>Инструкция:</h3>
+        <ul>
+            <li>Кликните на холсте, чтобы установить <span class="highlight">точку A</span> (источник света)</li>
+            <li>Кликните в другом месте, чтобы установить <span class="highlight">точку B</span> (наблюдатель)</li>
+            <li>Третий клик очищает холст</li>
+            <li>Точки должны находиться <span class="highlight">над зеркалом</span>!</li>
+            <li>Перетаскивайте точки мышью после установки</li>
+            <li>Нажмите "Запустить анимацию" для визуализации хода лучей</li>
+        </ul>
+    </div>
+    
+    <div class="info-panel">
+        <h2>Физические законы отражения</h2>
+        
+        <div class="law">
+            <strong>Закон отражения света:</strong>
+            <div class="formula">∠<sub>пад</sub> = ∠<sub>отр</sub></div>
+            <p>Угол падения луча равен углу отражения относительно нормали к поверхности зеркала.</p>
+        </div>
+        
+        <div class="law">
+            <strong>Свойство изображения в плоском зеркале:</strong>
+            <div class="formula">|SA| = |S'A|</div>
+            <p>Изображение точки S находится на том же расстоянии за зеркалом, на каком точка S расположена перед зеркалом.</p>
+        </div>
+        
+        <div class="law">
+            <strong>Метод построения точки отражения C:</strong>
+            <ol>
+                <li>Построим мнимое изображение A' точки A</li>
+                <li>Проведём прямую линию от A' к точке B</li>
+                <li>Точка пересечения этой линии с зеркалом - искомая точка C</li>
+            </ol>
+            <p>Этот метод основан на принципе, что свет распространяется по кратчайшему пути.</p>
+        </div>
+        
+       
+    </div>
+
+    <script>
+        const canvas = document.getElementById('mirrorCanvas');
+        const ctx = canvas.getContext('2d');
+        const clearBtn = document.getElementById('clearBtn');
+        const animateBtn = document.getElementById('animateBtn');
+        
+        // Параметры зеркала
+        const mirrorY = canvas.height / 2 + 50;
+        const mirrorX1 = 100;
+        const mirrorX2 = canvas.width - 100;
+        
+        // Состояние приложения
+        let points = [];
+        let isDragging = false;
+        let dragPointIndex = -1;
+        let animationId = null;
+        let animationProgress = 0;
+        let reflectionPoint = null;
+        let virtualImage = null;
+        
+        // Цвета
+        const colors = {
+            mirror: '#2c3e50',
+            pointA: '#e74c3c',
+            pointB: '#3498db',
+            reflectionPoint: '#27ae60',
+            virtualImage: '#9b59b6',
+            incidentRay: '#e74c3c',
+            reflectedRay: '#2980b9',
+            virtualRay: '#8e44ad',
+            constructionLine: '#95a5a6'
+        };
+        
+        // Инициализация
+        function init() {
+            drawScene();
+            setupEventListeners();
+        }
+        
+        // Настройка обработчиков событий
+        function setupEventListeners() {
+            canvas.addEventListener('click', handleCanvasClick);
+            canvas.addEventListener('mousedown', handleMouseDown);
+            canvas.addEventListener('mousemove', handleMouseMove);
+            canvas.addEventListener('mouseup', handleMouseUp);
+            canvas.addEventListener('mouseleave', handleMouseUp);
+            clearBtn.addEventListener('click', clearCanvas);
+            animateBtn.addEventListener('click', toggleAnimation);
+        }
+        
+        // Обработка клика по холсту
+        function handleCanvasClick(e) {
+            if (isDragging) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            // Проверка, что точка над зеркалом
+            if (y >= mirrorY - 5) {
+                alert("Точки должны находиться над зеркалом!");
+                return;
+            }
+            
+            // Очистка при третьем клике
+            if (points.length >= 2) {
+                points = [];
+                stopAnimation();
+            } else {
+                points.push({ x, y });
+            }
+            
+            calculateReflection();
+            drawScene();
+        }
+        
+        // Обработка нажатия мыши
+        function handleMouseDown(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            // Проверка нажатия на точку
+            for (let i = 0; i < points.length; i++) {
+                const point = points[i];
+                const distance = Math.sqrt((x - point.x) ** 2 + (y - point.y) ** 2);
+                
+                if (distance <= 10) {
+                    isDragging = true;
+                    dragPointIndex = i;
+                    stopAnimation();
+                    break;
+                }
+            }
+        }
+        
+        // Обработка движения мыши
+        function handleMouseMove(e) {
+            if (!isDragging) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            // Проверка, что точка над зеркалом
+            if (y < mirrorY - 5) {
+                points[dragPointIndex].x = x;
+                points[dragPointIndex].y = y;
+                calculateReflection();
+                drawScene();
+            }
+        }
+        
+        // Обработка отпускания мыши
+        function handleMouseUp() {
+            isDragging = false;
+            dragPointIndex = -1;
+        }
+        
+        // Расчет точки отражения
+        function calculateReflection() {
+            if (points.length < 2) {
+                reflectionPoint = null;
+                virtualImage = null;
+                return;
+            }
+            
+            const A = points[0];
+            const B = points[1];
+            
+            // Построение мнимого изображения A'
+            virtualImage = {
+                x: A.x,
+                y: 2 * mirrorY - A.y
+            };
+            
+            // Расчет точки пересечения A'B с зеркалом
+            const t = (mirrorY - virtualImage.y) / (B.y - virtualImage.y);
+            const Cx = virtualImage.x + t * (B.x - virtualImage.x);
+            
+            // Проверка, что точка в пределах зеркала
+            if (Cx >= mirrorX1 && Cx <= mirrorX2) {
+                reflectionPoint = { x: Cx, y: mirrorY };
+            } else {
+                reflectionPoint = null;
+            }
+        }
+        
+        // Очистка холста
+        function clearCanvas() {
+            points = [];
+            reflectionPoint = null;
+            virtualImage = null;
+            stopAnimation();
+            drawScene();
+        }
+        
+        // Переключение анимации
+        function toggleAnimation() {
+            if (animationId) {
+                stopAnimation();
+            } else if (points.length === 2 && reflectionPoint) {
+                startAnimation();
+            }
+        }
+        
+        // Запуск анимации
+        function startAnimation() {
+            animationProgress = 0;
+            
+            function animate() {
+                animationProgress += 0.01;
+                if (animationProgress >= 1) {
+                    stopAnimation();
+                    return;
+                }
+                
+                drawScene();
+                animationId = requestAnimationFrame(animate);
+            }
+            
+            animate();
+        }
+        
+        // Остановка анимации
+        function stopAnimation() {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+                animationProgress = 0;
+                drawScene();
+            }
+        }
+        
+        // Отрисовка сцены
+        function drawScene() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawMirror();
+            
+            // Отрисовка точек
+            points.forEach((point, index) => {
+                drawPoint(point.x, point.y, index === 0 ? colors.pointA : colors.pointB, `Точка ${index === 0 ? 'A' : 'B'}`);
+            });
+            
+            // Отрисовка виртуального изображения и точки отражения
+            if (virtualImage) {
+                drawPoint(virtualImage.x, virtualImage.y, colors.virtualImage, "A'", true);
+            }
+            
+            if (reflectionPoint) {
+                drawPoint(reflectionPoint.x, reflectionPoint.y, colors.reflectionPoint, "C");
+            }
+            
+            // Отрисовка лучей
+            if (points.length === 2 && reflectionPoint) {
+                const A = points[0];
+                const B = points[1];
+                
+                // Вспомогательная линия (A' - B)
+                drawDashedLine(virtualImage.x, virtualImage.y, reflectionPoint.x, reflectionPoint.y, colors.constructionLine);
+                drawDashedLine(reflectionPoint.x, reflectionPoint.y, B.x, B.y, colors.constructionLine);
+                
+                // Падающий луч (A - C)
+                if (animationProgress > 0) {
+                    const animPoint = interpolatePoint(A, reflectionPoint, Math.min(1, animationProgress * 2));
+                    drawSolidLine(A.x, A.y, animPoint.x, animPoint.y, colors.incidentRay);
+                    
+                    // Отраженный луч (C - B)
+                    if (animationProgress > 0.5) {
+                        const animPoint2 = interpolatePoint(reflectionPoint, B, Math.min(1, (animationProgress - 0.5) * 2));
+                        drawSolidLine(reflectionPoint.x, reflectionPoint.y, animPoint2.x, animPoint2.y, colors.reflectedRay);
+                    }
+                } else {
+                    drawSolidLine(A.x, A.y, reflectionPoint.x, reflectionPoint.y, colors.incidentRay);
+                    drawSolidLine(reflectionPoint.x, reflectionPoint.y, B.x, B.y, colors.reflectedRay);
+                }
+                
+                // Перпендикуляр (пунктир)
+                if (virtualImage) {
+                    drawDashedLine(A.x, A.y, virtualImage.x, virtualImage.y, colors.constructionLine);
+                }
+            }
+        }
+        
+        // Интерполяция точки для анимации
+        function interpolatePoint(start, end, progress) {
+            return {
+                x: start.x + (end.x - start.x) * progress,
+                y: start.y + (end.y - start.y) * progress
+            };
+        }
+        
+        // Отрисовка зеркала
+        function drawMirror() {
+            // Основная линия зеркала
+            ctx.beginPath();
+            ctx.moveTo(mirrorX1, mirrorY);
+            ctx.lineTo(mirrorX2, mirrorY);
+            ctx.strokeStyle = colors.mirror;
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            
+            // Штриховка под зеркалом
+            ctx.strokeStyle = '#95a5a6';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([2, 4]);
+            
+            ctx.beginPath();
+            for (let x = mirrorX1 + 10; x < mirrorX2; x += 15) {
+                ctx.moveTo(x, mirrorY);
+                ctx.lineTo(x, mirrorY + 10);
+            }
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // Подпись
+            ctx.fillStyle = colors.mirror;
+            ctx.font = '16px Arial';
+            ctx.fillText('Плоское зеркало', (mirrorX1 + mirrorX2) / 2 - 50, mirrorY - 10);
+        }
+        
+        // Отрисовка точки
+        function drawPoint(x, y, color, label, isVirtual = false) {
+            ctx.beginPath();
+            ctx.arc(x, y, 8, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+            
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            if (isVirtual) {
+                ctx.beginPath();
+                ctx.arc(x, y, 10, 0, Math.PI * 2);
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 1;
+                ctx.setLineDash([5, 3]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+            
+            ctx.fillStyle = color;
+            ctx.font = 'bold 16px Arial';
+            ctx.fillText(label, x + 12, y - 12);
+        }
+        
+        // Отрисовка сплошной линии
+        function drawSolidLine(x1, y1, x2, y2, color) {
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+        
+        // Отрисовка пунктирной линии
+        function drawDashedLine(x1, y1, x2, y2, color) {
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 3]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+        
+        // Запуск приложения
+        window.onload = init;
+    </script>
+</body>
+</html>
