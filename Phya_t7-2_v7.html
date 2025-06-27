@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Задача о фигуристах - Подробное решение</title>
+    
+    <!-- MathJax для отображения формул -->
+    <script>
+      MathJax = {
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          displayMath: [['$$', '$$'], ['\\[', '\\]']],
+          processEscapes: true,
+          packages: {'[+]': ['ams']}
+        },
+        loader: {load: ['[tex]/ams']},
+        svg: {
+          fontCache: 'global'
+        }
+      };
+    </script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+    
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+        h1, h2, h3 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .canvas-container {
+            position: relative;
+            margin: 20px auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            background-color: white;
+        }
+        canvas {
+            display: block;
+            background-color: #f0f8ff;
+        }
+        .info-panel {
+            background-color: #e8f4fc;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin: 15px 0;
+            padding: 10px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 150px;
+        }
+        label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #2c3e50;
+        }
+        input {
+            padding: 8px;
+            width: 100px;
+            border: 1px solid #3498db;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.2s;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .result {
+            background-color: #27ae60;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 20px;
+            margin: 20px 0;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .instructions {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border-left: 4px solid #3498db;
+        }
+        .highlight {
+            background-color: #fffacd;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        .formula {
+            font-family: monospace;
+            font-size: 18px;
+            background-color: #f0f0f0;
+            padding: 8px 12px;
+            border-radius: 4px;
+            display: block;
+            margin: 15px 0;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+        .formula-block {
+            background-color: #f9f9f9;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .law {
+            background-color: white;
+            border-left: 3px solid #3498db;
+            padding: 12px 15px;
+            margin: 12px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        .solution {
+            background-color: #e8f4fc;
+            padding: 25px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .step {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px dashed #3498db;
+        }
+        .step:last-child {
+            border-bottom: none;
+        }
+        .axis {
+            stroke: #7f8c8d;
+            stroke-width: 1;
+            stroke-dasharray: 5,5;
+        }
+        .trajectory {
+            stroke: #3498db;
+            stroke-width: 2;
+            fill: none;
+        }
+        .face-line {
+            stroke: #e74c3c;
+            stroke-width: 3;
+        }
+        .explanation {
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .definition {
+            background-color: #f0f7ff;
+            border: 1px solid #aac;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .key-concept {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-top: 10px;
+            display: block;
+        }
+        .note {
+            background-color: #fff8e1;
+            border-left: 4px solid #ffc107;
+            padding: 10px 15px;
+            margin: 15px 0;
+        }
+        .math-container {
+            margin: 15px 0;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        .MJXc-display {
+            margin: 0 auto;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Задача о фигуристах - Подробное решение</h1>
+    
+    <div class="canvas-container">
+        <canvas id="skatingCanvas" width="800" height="500"></canvas>
+    </div>
+    
+    <div class="controls">
+        <div class="control-group">
+            <label for="timeInput">Время t (сек):</label>
+            <input type="number" id="timeInput" min="1" max="60" value="10">
+        </div>
+        
+        <div class="control-group">
+            <label for="nInput">Число совпадений n:</label>
+            <input type="number" id="nInput" min="2" max="20" value="9">
+        </div>
+        
+        <div class="control-group">
+            <label for="speedInput">Скорость анимации:</label>
+            <input type="number" id="speedInput" min="0.5" max="5" step="0.5" value="1">
+        </div>
+        
+        <div class="control-group">
+            <button id="restartBtn">Перезапуск</button>
+            <button id="animateBtn">Старт/Стоп</button>
+        </div>
+    </div>
+    
+    <div class="result">
+        Время одного оборота фигуристки: <span id="resultT">1.00</span> секунд
+    </div>
+    
+    <div class="solution">
+        <h2>Подробный ход решения задачи</h2>
+        
+        <div class="step">
+            <h3>1. Анализ условия задачи</h3>
+            <p>В задаче рассматривается система из двух фигуристов:</p>
+            <ul style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                <li>Фигуристка вращается вокруг своей оси с постоянной угловой скоростью</li>
+                <li>Фигурист движется по круговой орбите вокруг фигуристки с постоянной угловой скоростью</li>
+                <li>Оба вращаются в одном направлении</li>
+            </ul>
+            
+            <div class="explanation">
+                <p><strong>Дано:</strong></p>
+                <div class="math-container">
+                    $$t = 10 \text{ с} \quad \text{(время наблюдения)}$$
+                    $$n = 9 \quad \text{(количество совпадений направлений)}$$
+                </div>
+                
+                <p><strong>Особенности условия:</strong></p>
+                <p>За время t фигурист совершает <span class="highlight">2 полных оборота</span> вокруг фигуристки. При этом фигуристка <span class="highlight">9 раз</span> оказывается повернутой лицом к фигуристу, причем:</p>
+                <ul>
+                    <li>Первый раз - в начале наблюдения (t=0)</li>
+                    <li>Последний раз - в конце наблюдения (t=10 с)</li>
+                </ul>
+            </div>
+            
+            <div class="definition">
+                <p><strong>Совпадение направлений</strong> - момент, когда вектор, указывающий направление "лица" фигуристки, совпадает с направлением на фигуриста.</p>
+                <p>В системе координат с центром на фигуристке это означает, что угол поворота фигуристки равен угловому положению фигуриста.</p>
+            </div>
+        </div>
+        
+        <div class="step">
+            <h3>2. Определение угловых скоростей</h3>
+            
+            <div class="explanation">
+                <p><strong>Угловая скорость фигуриста ($\omega_{\text{ф}}$):</strong></p>
+                <p>Фигурист совершает 2 оборота за время t. Угловая скорость в оборотах в секунду:</p>
+                <div class="math-container">
+                    $$\omega_{\text{ф}} = \frac{\text{количество оборотов}}{\text{время}} = \frac{2}{t}$$
+                </div>
+                
+                <p>Подставляя значение t = 10 с:</p>
+                <div class="math-container">
+                    $$\omega_{\text{ф}} = \frac{2}{10} = 0.2 \text{ об/с}$$
+                </div>
+            </div>
+            
+            <div class="explanation">
+                <p><strong>Частота совпадений направлений ($f_{\text{с}}$):</strong></p>
+                <p>За время t происходит n совпадений направлений. При этом важно учесть, что:</p>
+                <ul>
+                    <li>Совпадения происходят в моменты времени: $t_0$, $t_1$, ..., $t_{n-1}$</li>
+                    <li>Количество интервалов между совпадениями: $(n-1)$</li>
+                </ul>
+                
+                <p>Частота совпадений - количество событий в единицу времени:</p>
+                <div class="math-container">
+                    $$f_{\text{с}} = \frac{\text{количество интервалов}}{\text{время}} = \frac{n - 1}{t}$$
+                </div>
+                
+                <p>Подставляя значения n = 9, t = 10 с:</p>
+                <div class="math-container">
+                    $$f_{\text{с}} = \frac{9 - 1}{10} = \frac{8}{10} = 0.8 \text{ Гц}$$
+                </div>
+            </div>
+            
+            <div class="note">
+                <p><strong>Важное замечание:</strong> Почему $(n-1)$, а не $n$?</p>
+                <p>Представьте, что вы наблюдаете за процессом 10 секунд. В начальный момент (t=0) уже происходит первое совпадение. Последнее совпадение происходит в момент t=10 с. Между ними происходит еще 7 совпадений. Всего: 1 (начало) + 7 (в процессе) + 1 (конец) = 9 совпадений.</p>
+                <p>Количество промежутков между совпадениями: 8, что соответствует $(n-1)$.</p>
+            </div>
+        </div>
+        
+        <div class="step">
+            <h3>3. Физическая интерпретация частоты совпадений</h3>
+            
+            <div class="explanation">
+                <p>Совпадение направлений происходит, когда фигуристка "догоняет" фигуриста в своем вращении относительно системы отсчета, связанной с центром (фигуристкой).</p>
+                
+                <p>В системе отсчета, связанной с фигуристкой:</p>
+                <ul>
+                    <li>Фигурист неподвижен (так как система отсчета вращается вместе с фигуристкой)</li>
+                    <li>Направление "лица" фигуристки фиксировано</li>
+                </ul>
+                
+                <p>В абсолютной системе отсчета:</p>
+                <ul>
+                    <li>Фигурист движется с угловой скоростью $\omega_{\text{ф}}$</li>
+                    <li>Фигуристка вращается с угловой скоростью $\omega_{\text{фк}}$</li>
+                </ul>
+                
+                <p>Относительная угловая скорость вращения фигуристки относительно фигуриста:</p>
+                <div class="math-container">
+                    $$\omega_{\text{отн}} = \omega_{\text{фк}} - \omega_{\text{ф}}$$
+                </div>
+                
+                <p>Частота совпадений направлений равна относительной угловой скорости:</p>
+                <div class="math-container">
+                    $$f_{\text{с}} = |\omega_{\text{отн}}| = |\omega_{\text{фк}} - \omega_{\text{ф}}|$$
+                </div>
+                
+                <p>Так как фигуристка вращается в том же направлении, что и движется фигурист, и должна вращаться быстрее, чтобы "догонять" его направление, то:</p>
+                <div class="math-container">
+                    $$\omega_{\text{фк}} > \omega_{\text{ф}} \quad \Rightarrow \quad \omega_{\text{отн}} = \omega_{\text{фк}} - \omega_{\text{ф}} > 0$$
+                </div>
+                
+                <p>Следовательно:</p>
+                <div class="math-container">
+                    $$\omega_{\text{фк}} - \omega_{\text{ф}} = f_{\text{с}}$$
+                </div>
+            </div>
+            
+            <div class="definition">
+                <p><strong>Физический смысл:</strong> Разность угловых скоростей определяет, как часто направление "лица" фигуристки будет совпадать с направлением на фигуриста.</p>
+                <p>Каждое совпадение происходит, когда фигуристка "проходит" мимо фигуриста в своем вращении.</p>
+            </div>
+        </div>
+        
+        <div class="step">
+            <h3>4. Определение угловой скорости фигуристки</h3>
+            
+            <div class="explanation">
+                <p>Из предыдущего пункта мы имеем:</p>
+                <div class="math-container">
+                    $$\omega_{\text{фк}} - \omega_{\text{ф}} = f_{\text{с}}$$
+                </div>
+                
+                <p>Подставляя выражения для $\omega_{\text{ф}}$ и $f_{\text{с}}$:</p>
+                <div class="math-container">
+                    $$\omega_{\text{фк}} = \omega_{\text{ф}} + f_{\text{с}} = \frac{2}{t} + \frac{n-1}{t} = \frac{2 + n - 1}{t} = \frac{n + 1}{t}$$
+                </div>
+                
+                <p>Подставляя значения n = 9, t = 10 с:</p>
+                <div class="math-container">
+                    $$\omega_{\text{фк}} = \frac{9 + 1}{10} = \frac{10}{10} = 1 \text{ об/с}$$
+                </div>
+            </div>
+            
+            <div class="note">
+                <p><strong>Проверка логики:</strong></p>
+                <p>При n=9 и t=10 с мы получили $\omega_{\text{фк}}$ = 1 об/с, что означает, что фигуристка совершает 1 оборот в секунду.</p>
+                <p>Фигурист за 10 секунд совершит 2 оборота. Фигуристка за это же время совершит 10 оборотов.</p>
+                <p>Относительная угловая скорость: 10 - 2 = 8 об/с за 10 секунд, что соответствует 8 совпадениям за 10 секунд (плюс совпадения в начале и конце), итого 9 совпадений, что соответствует условию задачи.</p>
+            </div>
+        </div>
+        
+        <div class="step">
+            <h3>5. Определение периода вращения фигуристки</h3>
+            
+            <div class="explanation">
+                <p>Период вращения - время, за которое тело совершает один полный оборот. Период связан с угловой скоростью соотношением:</p>
+                <div class="math-container">
+                    $$T = \frac{1}{f} = \frac{2\pi}{\omega}$$
+                </div>
+                
+                <p>где:</p>
+                <ul>
+                    <li>T - период вращения</li>
+                    <li>f - частота вращения (оборотов в секунду)</li>
+                    <li>ω - угловая скорость (рад/с)</li>
+                </ul>
+                
+                <p>В нашем случае угловая скорость выражена в оборотах в секунду, поэтому период:</p>
+                <div class="math-container">
+                    $$T = \frac{1}{\omega_{\text{фк}}}$$
+                </div>
+                
+                <p>Подставляя выражение для $\omega_{\text{фк}}$:</p>
+                <div class="math-container">
+                    $$T = \frac{1}{\frac{n+1}{t}} = \frac{t}{n+1}$$
+                </div>
+                
+                <p>Подставляя значения t = 10 с, n = 9:</p>
+                <div class="math-container">
+                    $$T = \frac{10}{9+1} = \frac{10}{10} = 1 \text{ с}$$
+                </div>
+            </div>
+            
+            <div class="result" style="background-color: #2980b9; margin-top: 20px;">
+                <h3>Окончательный ответ:</h3>
+                <p>Время одного оборота фигуристки: $T = \frac{t}{n+1} = 1$ секунда</p>
+            </div>
+        </div>
+        
+        <div class="step">
+            <h3>6. Общая формула решения</h3>
+            
+            <div class="formula-block">
+                <div class="math-container">
+                    $$T = \frac{t}{n + 1}$$
+                </div>
+                <p>где:</p>
+                <ul>
+                    <li>T - время одного оборота фигуристки (сек)</li>
+                    <li>t - время наблюдения (сек)</li>
+                    <li>n - количество совпадений направлений за время t</li>
+                </ul>
+            </div>
+            
+            <div class="explanation">
+                <p><strong>Проверка размерности:</strong></p>
+                <div class="math-container">
+                    $$[T] = \frac{[t]}{[n]} = \frac{\text{с}}{1} = \text{с}$$
+                </div>
+                <p>Размерность правильная.</p>
+                
+                <p><strong>Предельные случаи:</strong></p>
+                <ul>
+                    <li>Если $n \to \infty$, то $T \to 0$ - фигуристка вращается бесконечно быстро</li>
+                    <li>Если $n = 1$, то $T = t/2$ - особый случай, когда совпадение только в начале и конце</li>
+                    <li>Если $t \to \infty$, то $T \to \infty$ - фигуристка не вращается</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div class="info-panel">
+        <h2>Физические законы и принципы</h2>
+        
+        <div class="law">
+            <strong>Угловая скорость и период вращения:</strong>
+            <div class="math-container">
+                $$\omega = \frac{2\pi}{T} = 2\pi f$$
+            </div>
+            <p>Угловая скорость (ω) характеризует скорость изменения угла поворота тела и измеряется в радианах в секунду. Период вращения (T) - время одного полного оборота. Частота вращения (f) - количество оборотов в единицу времени.</p>
+        </div>
+        
+        <div class="law">
+            <strong>Относительное движение во вращающейся системе отсчета:</strong>
+            <p>Движение фигуриста относительно фигуристки складывается из:</p>
+            <ul>
+                <li>Движения фигуриста по орбите</li>
+                <li>Вращения самой фигуристки</li>
+            </ul>
+            <p>Относительная угловая скорость определяется как разность угловых скоростей при вращении в одном направлении.</p>
+        </div>
+        
+        <div class="law">
+            <strong>Условие совпадения направлений:</strong>
+            <div class="math-container">
+                $$\theta_{\text{фк}}(t) - \theta_{\text{ф}}(t) = 2\pi k, \quad k \in \mathbb{Z}$$
+            </div>
+            <p>Совпадение направлений происходит, когда разность углов поворота фигуристки и углового положения фигуриста кратна 2π радианам (одному полному обороту).</p>
+        </div>
+        
+        <div class="law">
+            <strong>Период между событиями:</strong>
+            <div class="math-container">
+                $$T_{\text{с}} = \frac{2\pi}{|\omega_{\text{фк}} - \omega_{\text{ф}}|}$$
+            </div>
+            <p>Период между последовательными совпадениями направлений обратно пропорционален модулю разности угловых скоростей.</p>
+        </div>
+    </div>
+
+    <script>
+        // Основные константы и переменные
+        const canvas = document.getElementById('skatingCanvas');
+        const ctx = canvas.getContext('2d');
+        const timeInput = document.getElementById('timeInput');
+        const nInput = document.getElementById('nInput');
+        const speedInput = document.getElementById('speedInput');
+        const restartBtn = document.getElementById('restartBtn');
+        const animateBtn = document.getElementById('animateBtn');
+        const resultT = document.getElementById('resultT');
+        
+        // Параметры анимации
+        let t = 10;     // Время в секундах
+        let n = 9;      // Количество совпадений
+        let animationSpeed = 1; // Скорость анимации
+        let animationId = null;
+        let startTime = null;
+        let isAnimating = false;
+        
+        // Параметры сцены
+        const center = { x: canvas.width / 2, y: canvas.height / 2 };
+        const orbitRadius = 150;  // Радиус орбиты фигуриста
+        const skaterRadius = 30;  // Радиус фигуристки
+        const partnerRadius = 20; // Радиус фигуриста
+        
+        // Цвета
+        const colors = {
+            skater: '#e74c3c',
+            partner: '#3498db',
+            orbit: '#2980b9',
+            face: '#27ae60',
+            highlight: '#f1c40f',
+            text: '#2c3e50'
+        };
+        
+        // Инициализация
+        function init() {
+            drawScene(0);
+            setupEventListeners();
+            calculateResult();
+        }
+        
+        // Настройка обработчиков событий
+        function setupEventListeners() {
+            restartBtn.addEventListener('click', restartAnimation);
+            animateBtn.addEventListener('click', toggleAnimation);
+            timeInput.addEventListener('change', updateParameters);
+            nInput.addEventListener('change', updateParameters);
+            speedInput.addEventListener('change', updateSpeed);
+        }
+        
+        // Обновление параметров
+        function updateParameters() {
+            t = parseFloat(timeInput.value) || 10;
+            n = parseFloat(nInput.value) || 9;
+            calculateResult();
+            if (!isAnimating) {
+                drawScene(0);
+            }
+        }
+        
+        // Обновление скорости анимации
+        function updateSpeed() {
+            animationSpeed = parseFloat(speedInput.value) || 1;
+        }
+        
+        // Перезапуск анимации
+        function restartAnimation() {
+            stopAnimation();
+            startAnimation();
+        }
+        
+        // Переключение анимации
+        function toggleAnimation() {
+            if (isAnimating) {
+                stopAnimation();
+            } else {
+                startAnimation();
+            }
+        }
+        
+        // Запуск анимации
+        function startAnimation() {
+            isAnimating = true;
+            animateBtn.textContent = 'Стоп';
+            startTime = null;
+            animationId = requestAnimationFrame(animate);
+        }
+        
+        // Остановка анимации
+        function stopAnimation() {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+            isAnimating = false;
+            animateBtn.textContent = 'Старт';
+        }
+        
+        // Анимация
+        function animate(timestamp) {
+            if (!startTime) startTime = timestamp;
+            
+            // Вычисление текущего времени модели
+            const elapsed = (timestamp - startTime) / 1000; // в секундах
+            const modelTime = (elapsed * animationSpeed) % t;
+            
+            // Отрисовка сцены
+            drawScene(modelTime);
+            
+            // Продолжение анимации
+            animationId = requestAnimationFrame(animate);
+        }
+        
+        // Отрисовка всей сцены
+        function drawScene(modelTime) {
+            // Очистка холста
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Рисование осей координат
+            drawAxes();
+            
+            // Рисование орбиты
+            drawOrbit();
+            
+            // Расчет позиций и углов
+            const partnerPos = calculatePartnerPosition(modelTime);
+            const skaterAngle = calculateSkaterAngle(modelTime);
+            const isAligned = checkAlignment(partnerPos, skaterAngle);
+            
+            // Рисование фигуристки (в центре)
+            drawSkater(skaterAngle, isAligned);
+            
+            // Рисование фигуриста
+            drawPartner(partnerPos, isAligned);
+            
+            // Рисование линии "лица" фигуристки
+            drawFaceLine(skaterAngle, isAligned);
+            
+            // Рисование линии к фигуристу
+            drawPartnerLine(partnerPos, isAligned);
+            
+            // Рисование информации о времени
+            drawTimeInfo(modelTime);
+            
+            // Рисование совпадений
+            drawAlignmentPoints();
+        }
+        
+        // Рисование осей координат
+        function drawAxes() {
+            ctx.beginPath();
+            ctx.strokeStyle = '#7f8c8d';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 3]);
+            
+            // Ось X
+            ctx.moveTo(50, center.y);
+            ctx.lineTo(canvas.width - 50, center.y);
+            
+            // Ось Y
+            ctx.moveTo(center.x, 50);
+            ctx.lineTo(center.x, canvas.height - 50);
+            
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // Подписи осей
+            ctx.fillStyle = colors.text;
+            ctx.font = '14px Arial';
+            ctx.fillText('X', canvas.width - 40, center.y - 10);
+            ctx.fillText('Y', center.x + 10, 40);
+        }
+        
+        // Рисование орбиты
+        function drawOrbit() {
+            ctx.beginPath();
+            ctx.arc(center.x, center.y, orbitRadius, 0, Math.PI * 2);
+            ctx.strokeStyle = colors.orbit;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+        
+        // Расчет позиции фигуриста
+        function calculatePartnerPosition(time) {
+            // Угловая скорость фигуриста (об/с)
+            const omegaPartner = 2 / t;
+            
+            // Угол поворота фигуриста (в радианах)
+            const angle = 2 * Math.PI * omegaPartner * time;
+            
+            return {
+                x: center.x + orbitRadius * Math.cos(angle),
+                y: center.y + orbitRadius * Math.sin(angle)
+            };
+        }
+        
+        // Расчет угла поворота фигуристки
+        function calculateSkaterAngle(time) {
+            // Угловая скорость фигуристки (об/с)
+            const omegaSkater = (n + 1) / t;
+            
+            // Угол поворота (в радианах)
+            return 2 * Math.PI * omegaSkater * time;
+        }
+        
+        // Проверка совпадения направлений
+        function checkAlignment(partnerPos, skaterAngle) {
+            // Угол направления к фигуристу
+            const dx = partnerPos.x - center.x;
+            const dy = partnerPos.y - center.y;
+            const partnerAngle = Math.atan2(dy, dx);
+            
+            // Разность углов (приводим к диапазону -π..π)
+            let diff = (skaterAngle - partnerAngle + Math.PI) % (2 * Math.PI);
+            if (diff < 0) diff += 2 * Math.PI;
+            diff -= Math.PI;
+            
+            // Проверка близости углов (порог 0.1 радиан)
+            return Math.abs(diff) < 0.1;
+        }
+        
+        // Рисование фигуристки
+        function drawSkater(angle, isAligned) {
+            // Тело фигуристки
+            ctx.beginPath();
+            ctx.arc(center.x, center.y, skaterRadius, 0, Math.PI * 2);
+            ctx.fillStyle = isAligned ? colors.highlight : colors.skater;
+            ctx.fill();
+            ctx.strokeStyle = '#c0392b';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Лицо (точка на окружности)
+            const faceX = center.x + skaterRadius * Math.cos(angle);
+            const faceY = center.y + skaterRadius * Math.sin(angle);
+            
+            ctx.beginPath();
+            ctx.arc(faceX, faceY, 5, 0, Math.PI * 2);
+            ctx.fillStyle = 'white';
+            ctx.fill();
+        }
+        
+        // Рисование фигуриста
+        function drawPartner(position, isAligned) {
+            // Тело фигуриста
+            ctx.beginPath();
+            ctx.arc(position.x, position.y, partnerRadius, 0, Math.PI * 2);
+            ctx.fillStyle = isAligned ? colors.highlight : colors.partner;
+            ctx.fill();
+            ctx.strokeStyle = '#2980b9';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Лицо (направлено к центру)
+            const dx = center.x - position.x;
+            const dy = center.y - position.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            const faceX = position.x + (partnerRadius * dx) / dist;
+            const faceY = position.y + (partnerRadius * dy) / dist;
+            
+            ctx.beginPath();
+            ctx.arc(faceX, faceY, 4, 0, Math.PI * 2);
+            ctx.fillStyle = 'white';
+            ctx.fill();
+        }
+        
+        // Рисование линии "лица" фигуристки
+        function drawFaceLine(angle, isAligned) {
+            const length = orbitRadius + 30;
+            const endX = center.x + length * Math.cos(angle);
+            const endY = center.y + length * Math.sin(angle);
+            
+            ctx.beginPath();
+            ctx.moveTo(center.x, center.y);
+            ctx.lineTo(endX, endY);
+            ctx.strokeStyle = isAligned ? colors.highlight : colors.face;
+            ctx.lineWidth = 3;
+            ctx.stroke();
+        }
+        
+        // Рисование линии к фигуристу
+        function drawPartnerLine(partnerPos, isAligned) {
+            ctx.beginPath();
+            ctx.moveTo(center.x, center.y);
+            ctx.lineTo(partnerPos.x, partnerPos.y);
+            ctx.strokeStyle = isAligned ? colors.highlight : colors.partner;
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 3]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+        
+        // Рисование информации о времени
+        function drawTimeInfo(time) {
+            ctx.fillStyle = colors.text;
+            ctx.font = '16px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText(`Время: ${time.toFixed(2)} сек`, 20, 30);
+            
+            // Расчет текущего положения
+            const omegaPartner = 2 / t;
+            const partnerRevs = (omegaPartner * time).toFixed(2);
+            
+            const omegaSkater = (n + 1) / t;
+            const skaterRevs = (omegaSkater * time).toFixed(2);
+            
+            ctx.fillText(`Фигурист: ${partnerRevs} оборотов`, 20, 60);
+            ctx.fillText(`Фигуристка: ${skaterRevs} оборотов`, 20, 90);
+            
+            // Расчет относительной скорости
+            const relativeSpeed = (omegaSkater - omegaPartner).toFixed(2);
+            ctx.fillText(`Отн. скорость: ${relativeSpeed} об/с`, 20, 120);
+        }
+        
+        // Рисование точек совпадений
+        function drawAlignmentPoints() {
+            const count = n;
+            ctx.fillStyle = colors.highlight;
+            
+            for (let i = 0; i < count; i++) {
+                // Время совпадения
+                const time = (i * t) / (count - 1);
+                
+                // Позиция фигуриста в момент совпадения
+                const omegaPartner = 2 / t;
+                const angle = 2 * Math.PI * omegaPartner * time;
+                const x = center.x + orbitRadius * Math.cos(angle);
+                const y = center.y + orbitRadius * Math.sin(angle);
+                
+                // Рисование точки
+                ctx.beginPath();
+                ctx.arc(x, y, 6, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Подпись номера совпадения
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 12px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(i+1, x, y);
+                ctx.fillStyle = colors.highlight;
+            }
+        }
+        
+        // Расчет и отображение результата
+        function calculateResult() {
+            const T = t / (n + 1);
+            resultT.textContent = T.toFixed(2);
+        }
+        
+        // Запуск приложения
+        window.onload = init;
+    </script>
+</body>
+</html>
